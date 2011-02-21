@@ -41,28 +41,26 @@ static int dc_, bc_;
 
 
 /*! @param im pointer to gdImage
+ *  @param cx x position of center of symbol (= center of station circle)
+ *  @param cy y position of center of symbol
+ *  @param mx width of symbol
+ *  @param my height of symbol
  *  @param wd wind direction (0-360°)
  *  @param ws wind speed on knots.
  */
-void draw_wind_sym(gdImage *im, double wd, double ws)
+void draw_wind_sym(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws)
 {
    double sx, sy, lx, ly;
-   int mx, my, dx, dy, i, j;
+   int i, j;
    gdPoint p[3];
 
-   mx = gdImageSX(im);
-   my = gdImageSY(im);
-   
    sx = (double) mx / 5.0;
    sy = (double) my / 5.0;
 
-   mx >>= 1;
-   my >>= 1;
-
    if (ws <= 2.5)
    {
-      gdImageArc(im, mx, my, sx, sy, 0, 360, dc_);
-      gdImageArc(im, mx, my, sx * 0.66, sy * 0.66, 0, 360, dc_);
+      gdImageArc(im, cx, cy, sx, sy, 0, 360, dc_);
+      gdImageArc(im, cx, cy, sx * 0.66, sy * 0.66, 0, 360, dc_);
       return;
    }
 
@@ -70,12 +68,10 @@ void draw_wind_sym(gdImage *im, double wd, double ws)
    wd -= 90.0;
    lx = 0.25 * sx * cos(wd * M_PI / 180.0);
    ly = 0.25 * sy * sin(wd * M_PI / 180.0);
-   dx = 10 * lx + mx;
-   dy = 10 * ly + my;
 
-   gdImageLine(im, mx, my, dx, dy, dc_);
-   gdImageFilledArc(im, mx, my, sx, sy, 0, 360, bc_, gdArc);
-   gdImageArc(im, mx, my, sx, sy, 0, 360, dc_);
+   gdImageLine(im, cx, cy, 10 * lx + cx, 10 * ly + cy, dc_);
+   gdImageFilledArc(im, cx, cy, sx, sy, 0, 360, bc_, gdArc);
+   gdImageArc(im, cx, cy, sx, sy, 0, 360, dc_);
 
    // "round up" wind speed
    ws += 2.5;
@@ -84,8 +80,8 @@ void draw_wind_sym(gdImage *im, double wd, double ws)
 
    for (j = 0; j < MAX_WSYM; j++)
    {
-      p[0].x = (10 - j) * lx + mx;
-      p[0].y = (10 - j) * ly + my;
+      p[0].x = (10 - j) * lx + cx;
+      p[0].y = (10 - j) * ly + cy;
 
       switch (WS_DEF_[i].ws_sym[j])
       {
@@ -140,11 +136,11 @@ int main(int argc, char *argv[])
    else
       out = stdout;
 
-   im = gdImageCreate(100, 100);
+   im = gdImageCreate(300, 300);
    bc_ = gdImageColorAllocate(im, 255, 255, 255);
    dc_ = gdImageColorAllocate(im, 0, 0, 0);
 
-   draw_wind_sym(im, wdir, ws);
+   draw_wind_sym(im, 100, 100, 60, 60, wdir, ws);
 
    gdImagePng(im, out);
    gdImageDestroy(im);

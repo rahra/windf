@@ -3,6 +3,8 @@
 #include <math.h>
 #include <gd.h>
 
+#include "windf.h"
+
 
 #define MAX_WSYM 6
 
@@ -40,6 +42,17 @@ const struct WindSpeedDef WS_DEF_[] =
 static int dc_, bc_;
 
 
+/*! Set drawing colors of wind symbol
+ *  @param dc Drawing color.
+ *  @param bc Background color.
+ */
+void windf_col(int dc, int bc)
+{
+   dc_ = dc;
+   bc_ = bc;
+}
+
+
 /*! @param im pointer to gdImage
  *  @param cx x position of center of symbol (= center of station circle)
  *  @param cy y position of center of symbol
@@ -48,11 +61,13 @@ static int dc_, bc_;
  *  @param wd wind direction (0-360°)
  *  @param ws wind speed on knots.
  */
-void draw_wind_sym(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws)
+void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws)
 {
    double sx, sy, lx, ly;
    int i, j;
    gdPoint p[3];
+
+   gdImageSetThickness(im, (mx + my) >> 6);
 
    sx = (double) mx / 5.0;
    sy = (double) my / 5.0;
@@ -113,40 +128,5 @@ void draw_wind_sym(gdImage *im, int cx, int cy, int mx, int my, double wd, doubl
             continue;
       }
    }
-}
-
-
-int main(int argc, char *argv[])
-{
-   FILE *out;
-   double ws, wdir;
-   gdImage *im;
-
-   if (argc < 3)
-      fprintf(stderr, "usage: %s <windspeed [kn]> <windir> [<filename>]\n", argv[0]), exit(1);
-
-   ws = atof(argv[1]);
-   wdir = atof(argv[2]);
-
-   if (argc >= 4)
-   {
-      if ((out = fopen(argv[3], "w")) == NULL)
-         perror("fopen"), exit(1);
-   }
-   else
-      out = stdout;
-
-   im = gdImageCreate(300, 300);
-   bc_ = gdImageColorAllocate(im, 255, 255, 255);
-   dc_ = gdImageColorAllocate(im, 0, 0, 0);
-
-   draw_wind_sym(im, 100, 100, 60, 60, wdir, ws);
-
-   gdImagePng(im, out);
-   gdImageDestroy(im);
-
-   fclose(out);
-
-   return 0;
 }
 

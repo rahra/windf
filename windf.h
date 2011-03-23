@@ -5,7 +5,7 @@
 #include <gd.h>
 
 
-void windf_col(int, int);
+void windf_col(int);
 void windf_draw(gdImage*, int, int, int, int, double, double);
 
 

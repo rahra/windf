@@ -1,6 +1,6 @@
 CC=gcc
 LDFLAGS=-lm -lgd
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 
 windarr: windarr.o windf.o
 

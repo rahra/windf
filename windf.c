@@ -38,8 +38,16 @@ static const struct WindSpeedDef WS_DEF_[] =
 };
 
 
-// drawing and background color
-static int dc_;
+// drawing color, black is default
+static int dc_ = 0;
+// station circle: if 0 no circle is drawn
+static int sc_ = 1;
+
+
+void windf_station_circle(int n)
+{
+   sc_ = n;
+}
 
 
 /*! Set drawing colors of wind symbol
@@ -58,8 +66,9 @@ void windf_col(int dc)
  *  @param my height of symbol
  *  @param wd wind direction (0-360°)
  *  @param ws wind speed on knots.
+ *  @param c line color.
  */
-void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws)
+void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws, int dc)
 {
    double sx, sy, lx, ly;
    int i, j;
@@ -75,8 +84,11 @@ void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double w
    // if wind speed is too less or negative assume that there's no wind.
    if (ws <= 2.5)
    {
-      gdImageArc(im, cx, cy, sx, sy, 0, 360, dc_);
-      gdImageArc(im, cx, cy, sx * 0.66, sy * 0.66, 0, 360, dc_);
+      if (sc_)
+      {
+         gdImageArc(im, cx, cy, sx, sy, 0, 360, dc);
+         gdImageArc(im, cx, cy, sx * 0.66, sy * 0.66, 0, 360, dc);
+      }
       return;
    }
 
@@ -85,8 +97,13 @@ void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double w
    lx = 0.25 * sx * cos(wd * M_PI / 180.0);
    ly = 0.25 * sy * sin(wd * M_PI / 180.0);
 
-   gdImageLine(im, cx + 2 * lx, cy + 2 * ly, 10 * lx + cx, 10 * ly + cy, dc_);
-   gdImageArc(im, cx, cy, sx, sy, 0, 360, dc_);
+   if (sc_)
+   {
+      gdImageLine(im, cx + 2 * lx, cy + 2 * ly, 10 * lx + cx, 10 * ly + cy, dc);
+      gdImageArc(im, cx, cy, sx, sy, 0, 360, dc);
+   }
+   else
+      gdImageLine(im, cx, cy, 10 * lx + cx, 10 * ly + cy, dc);
 
    // "round up" wind speed
    ws += 2.5;
@@ -103,11 +120,11 @@ void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double w
       switch (WS_DEF_[i].ws_sym[j])
       {
          case WS_5:
-            gdImageLine(im, p[0].x, p[0].y, sx - 2.0 * ly, sy + 2.0 * lx, dc_);
+            gdImageLine(im, p[0].x, p[0].y, sx - 2.0 * ly, sy + 2.0 * lx, dc);
             break;
 
          case WS_10:
-            gdImageLine(im, p[0].x, p[0].y, sx - 4.0 * ly, sy + 4.0 * lx, dc_);
+            gdImageLine(im, p[0].x, p[0].y, sx - 4.0 * ly, sy + 4.0 * lx, dc);
             break;
 
          case WS_50U:
@@ -115,7 +132,7 @@ void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double w
             p[1].y = sy - ly;
             p[2].x = sx - lx - 4 * ly;
             p[2].y = sy - ly + 4 * lx;
-            gdImageFilledPolygon(im, p, 3, dc_);
+            gdImageFilledPolygon(im, p, 3, dc);
             break;
 
          case WS_50L:
@@ -123,12 +140,18 @@ void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double w
             p[1].y = sy - ly;
             p[2].x = sx - 4 * ly;
             p[2].y = sy + 4 * lx;
-            gdImageFilledPolygon(im, p, 3, dc_);
+            gdImageFilledPolygon(im, p, 3, dc);
             break;
 
          default:
             continue;
       }
    }
+}
+
+
+void windf_draw(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws)
+{
+   windf_drawc(im, cx, cy, mx, my, wd, ws, dc_);
 }
 

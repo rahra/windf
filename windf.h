@@ -5,7 +5,9 @@
 #include <gd.h>
 
 
+void windf_station_circle(int);
 void windf_col(int);
+void windf_drawc(gdImage*, int, int, int, int, double, double, int);
 void windf_draw(gdImage*, int, int, int, int, double, double);
 
 

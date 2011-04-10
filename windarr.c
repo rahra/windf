@@ -22,6 +22,8 @@ void usage(const char *a0)
       "   -w <width> ......... Default width of wind arrows.\n"
       "   -h <height> ........ Default height of wind arrows.\n"
       "   -n ................. Do not draw station circle, just arrow.\n"
+      "   -W <width> ......... Image width.\n"
+      "   -H <height> ........ Image height.\n"
       "\n"
       "   <wind_def> = <ws:wdir[:x:y[:w[:h]]][:#col]>\n"
       "      ws .............. Wind speed in knots.\n"
@@ -42,14 +44,14 @@ int main(int argc, char *argv[])
    int dc, bc;
 
    int c, i, arrdef[MAXAD];
-   int width = 0, height = 0;
+   int width = DEF_W, height = DEF_H, iwidth = DEF_W, iheight = DEF_H;
    char *file = NULL, *s;
 
    if (argc < 2)
       usage(argv[0]), exit(1);
 
    opterr = 0;
-   while ((c = getopt(argc, argv, "f:h:nw:")) != -1)
+   while ((c = getopt(argc, argv, "f:h:nw:W:H:")) != -1)
       switch (c)
       {
          case 'f':
@@ -67,12 +69,20 @@ int main(int argc, char *argv[])
          case 'w':
             width = atoi(optarg);
             break;
+
+         case 'H':
+            iheight = atoi(optarg);
+            break;
+
+         case 'W':
+            iwidth = atoi(optarg);
+            break;
       }
 
    //for (; argv[optind]; optind++) fprintf(stderr, "%s,", argv[optind]);
 
-   if (!width) width = DEF_W;
-   if (!height) height = DEF_H;
+   //if (!width) width = DEF_W;
+   //if (!height) height = DEF_H;
 
    if (file == NULL)
       out = stdout;
@@ -89,7 +99,8 @@ int main(int argc, char *argv[])
 
    if (im == NULL)
    {
-      im = gdImageCreate(width << 1, height << 1);
+      //im = gdImageCreate(width << 1, height << 1);
+      im = gdImageCreate(iwidth, iheight);
       bc = gdImageColorAllocate(im, 255, 255, 255);
       gdImageColorTransparent(im, bc);
    }

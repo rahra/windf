@@ -7,6 +7,8 @@
 
 
 #define MAX_WSYM 6
+#define LTHICK(x,y) ((x + y) >> 6)
+#define SDIV sqrt(5.0*5.0 + 2.0*2.0)
 
 
 struct WindSpeedDef
@@ -74,10 +76,10 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
    int i, j;
    gdPoint p[3];
 
-   gdImageSetThickness(im, (mx + my) >> 6);
+   sx = (double) (mx - 1) / SDIV;
+   sy = (double) (my - 1) / SDIV;
 
-   sx = (double) (mx - 1) / 5.0;
-   sy = (double) (my - 1) / 5.0;
+   gdImageSetThickness(im, LTHICK(mx, my));
 
    // round up a little bit
    ws += 2.5;
@@ -86,8 +88,8 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
    {
       if (sc_)
       {
-         gdImageArc(im, cx, cy, sx, sy, 0, 360, dc);
-         gdImageArc(im, cx, cy, sx * 0.66, sy * 0.66, 0, 360, dc);
+         gdImageArc(im, cx, cy, round(sx), round(sy), 0, 360, dc);
+         gdImageArc(im, cx, cy, round(sx * 0.66), round(sy * 0.66), 0, 360, dc);
       }
       return;
    }
@@ -99,11 +101,11 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
 
    if (sc_)
    {
-      gdImageLine(im, cx + 2 * lx, cy + 2 * ly, 10 * lx + cx, 10 * ly + cy, dc);
-      gdImageArc(im, cx, cy, sx, sy, 0, 360, dc);
+      gdImageLine(im, round(cx + 2 * lx), round(cy + 2 * ly), round(10 * lx + cx), round(10 * ly + cy), dc);
+      gdImageArc(im, cx, cy, round(sx), round(sy), 0, 360, dc);
    }
    else
-      gdImageLine(im, cx, cy, 10 * lx + cx, 10 * ly + cy, dc);
+      gdImageLine(im, cx, cy, round(10 * lx + cx), round(10 * ly + cy), dc);
 
    // "round up" wind speed
    ws += 2.5;
@@ -114,32 +116,32 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
    {
       sx = (10 - j) * lx + (double) cx;
       sy = (10 - j) * ly + (double) cy;
-      p[0].x = sx;
-      p[0].y = sy;
+      p[0].x = round(sx);
+      p[0].y = round(sy);
 
       switch (WS_DEF_[i].ws_sym[j])
       {
          case WS_5:
-            gdImageLine(im, p[0].x, p[0].y, sx - 2.0 * ly, sy + 2.0 * lx, dc);
+            gdImageLine(im, p[0].x, p[0].y, round(sx - 2.0 * ly), round(sy + 2.0 * lx), dc);
             break;
 
          case WS_10:
-            gdImageLine(im, p[0].x, p[0].y, sx - 4.0 * ly, sy + 4.0 * lx, dc);
+            gdImageLine(im, p[0].x, p[0].y, round(sx - 4.0 * ly), round(sy + 4.0 * lx), dc);
             break;
 
          case WS_50U:
-            p[1].x = sx - lx;
-            p[1].y = sy - ly;
-            p[2].x = sx - lx - 4 * ly;
-            p[2].y = sy - ly + 4 * lx;
+            p[1].x = round(sx - lx);
+            p[1].y = round(sy - ly);
+            p[2].x = round(sx - lx - 4 * ly);
+            p[2].y = round(sy - ly + 4 * lx);
             gdImageFilledPolygon(im, p, 3, dc);
             break;
 
          case WS_50L:
-            p[1].x = sx - lx;
-            p[1].y = sy - ly;
-            p[2].x = sx - 4 * ly;
-            p[2].y = sy + 4 * lx;
+            p[1].x = round(sx - lx);
+            p[1].y = round(sy - ly);
+            p[2].x = round(sx - 4 * ly);
+            p[2].y = round(sy + 4 * lx);
             gdImageFilledPolygon(im, p, 3, dc);
             break;
 

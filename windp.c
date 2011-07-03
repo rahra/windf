@@ -11,10 +11,25 @@
 // highest speed in m/s (it must be an odd number!)
 #define MAXMS 11
 
-#define MAXX 600
-#define MAXY 600
+// percent of silence circle
+#define SILENT_PERCENT 0.10
+
+#define MAXX 128
+#define MAXY 128
 
 #define SANGLE (5.0 * M_PI / 180.0)
+
+
+void usage(const char *s)
+{
+   fprintf(stderr,
+         "usage: %s [OPTIONS]\n"
+         "   -h ............ This help.\n"
+         "   -s ............ Print out statistics.\n"
+         "   -H <width> .... Width of image (default = %d)\n"
+         "   -W <height> ... Height of image (default = %d)\n",
+         s, MAXX, MAXY);
+}
 
 
 int main(int argc, char **argv)
@@ -26,11 +41,35 @@ int main(int argc, char **argv)
 
    gdImage *img;
    int fg[2], bg, col;
-   double sx, sy, ls, maxp;
-   double x1, y1, x2, y2;
+   double ls, maxp;
    gdPoint p[4];
    FILE *f;
 
+   int c, stats = 0;
+   int mx = MAXX, my = MAXY, mx_2, my_2;
+
+   opterr = 0;
+   while ((c = getopt(argc, argv, "hsW:H:")) != -1)
+      switch (c)
+      {
+         case 'H':
+            my = atoi(optarg);
+            break;
+
+         case 'W':
+            mx = atoi(optarg);
+            break;
+
+         case 'h':
+            usage(argv[0]);
+            exit(EXIT_FAILURE);
+
+         case 's':
+            stats = 1;
+            break;
+      }
+   mx_2 = mx >> 1;
+   my_2 = my >> 1;
    memset(ws, 0, sizeof(ws));
 
    while (fgets(buf, sizeof(buf), stdin) != NULL)
@@ -90,37 +129,42 @@ int main(int argc, char **argv)
       if (maxp < speed)
          maxp = speed;
 
-      printf("%d°: %.2f%%\n", i * 360 / NUMDIV, speed * 100.0);
+      if (stats)
+         printf("%d°: %.2f%%\n", i * 360 / NUMDIV, speed * 100.0);
    }
-   maxp += z / vd;
+   //maxp += z / vd;
 
-   printf("silent: %.2f%%\nmaxp = %.2f%%\n", z / vd * 100.0, maxp);
+   if (stats)
+      printf("silent: %.2f%%\nmaxp = %.2f%%\n", z / vd * 100.0, maxp * 100.0);
 
-
-   img = gdImageCreate(MAXX, MAXY);
+   img = gdImageCreateTrueColor(mx, my);
    bg = gdImageColorAllocate(img, 255, 255, 255);
-   fg[0] = gdImageColorAllocate(img, 0, 0, 0);
-   fg[1] = gdImageColorAllocate(img, 255, 0, 0);
+   gdImageFilledRectangle(img, 0, 0, mx, my, bg);
+   fg[1] = gdImageColorAllocate(img, 0, 0, 0);
    //gdImageSetThickness(img, 5);
+   gdImageSetAntiAliased(img, fg[1]);
+   fg[0] = gdAntiAliased;
 
-   ls = (double) z / (double) vd;
-   gdImageArc(img, MAXX >> 1, MAXY >> 1, 2 * ls * (MAXX >> 1) / maxp, 2 * ls * (MAXY >> 1) / maxp, 0, 360, fg[0]);
+   //ls = (double) z / (double) vd;
+   ls = SILENT_PERCENT;
+
+   gdImageArc(img, mx_2, my_2, 2 * ls * mx_2 / maxp, 2 * ls * my_2 / maxp, 0, 360, fg[0]);
    for (i = 0; i < NUMDIV; i++)
    {
       dir = i * 2.0 * M_PI / NUMDIV - M_PI_2;
-      for (j = 1, ls = (double) z / (double) vd, col = 0; j < MAXMS; j += 2, ls += speed, col ^= 1)
+      for (j = 1, ls = SILENT_PERCENT /*ls = (double) z / (double) vd*/, col = 0; j < MAXMS; j += 2, ls += speed, col ^= 1)
       {
          speed = (double) (ws[i][j] + ws[i][j + 1]) / (double) vd;
 
-         p[0].x = ls * cos(dir + SANGLE) * (MAXX >> 1) / maxp + (MAXX >> 1);
-         p[0].y = ls * sin(dir + SANGLE) * (MAXY >> 1) / maxp + (MAXY >> 1);
-         p[1].x = (speed + ls) * cos(dir + SANGLE) * (MAXX >> 1) / maxp + (MAXX >> 1);
-         p[1].y = (speed + ls) * sin(dir + SANGLE) * (MAXY >> 1) / maxp + (MAXY >> 1);
+         p[0].x = ls * cos(dir + SANGLE) * mx_2 / maxp + mx_2;
+         p[0].y = ls * sin(dir + SANGLE) * my_2 / maxp + my_2;
+         p[1].x = (speed + ls) * cos(dir + SANGLE) * mx_2 / maxp + mx_2;
+         p[1].y = (speed + ls) * sin(dir + SANGLE) * my_2 / maxp + my_2;
 
-         p[3].x = ls * cos(dir - SANGLE) * (MAXX >> 1) / maxp + (MAXX >> 1);
-         p[3].y = ls * sin(dir - SANGLE) * (MAXY >> 1) / maxp + (MAXY >> 1);
-         p[2].x = (speed + ls) * cos(dir - SANGLE) * (MAXX >> 1) / maxp + (MAXX >> 1);
-         p[2].y = (speed + ls) * sin(dir - SANGLE) * (MAXY >> 1) / maxp + (MAXY >> 1);
+         p[3].x = ls * cos(dir - SANGLE) * mx_2 / maxp + my_2;
+         p[3].y = ls * sin(dir - SANGLE) * mx_2 / maxp + my_2;
+         p[2].x = (speed + ls) * cos(dir - SANGLE) * mx_2 / maxp + mx_2;
+         p[2].y = (speed + ls) * sin(dir - SANGLE) * my_2 / maxp + my_2;
 
          if (col)
             gdImageFilledPolygon(img, p, 4, fg[0]);

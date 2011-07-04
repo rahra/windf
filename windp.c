@@ -24,6 +24,7 @@ void usage(const char *s)
 {
    fprintf(stderr,
          "usage: %s [OPTIONS]\n"
+         "   -f <file> ..... Image file name.\n"
          "   -h ............ This help.\n"
          "   -s ............ Print out statistics.\n"
          "   -H <width> .... Width of image (default = %d)\n"
@@ -38,6 +39,7 @@ int main(int argc, char **argv)
    char buf[256], *s;
    double speed, dir, z;
    int si, di, vd = 0;
+   char *fname = "out.png";
 
    gdImage *img;
    int fg[2], bg, col;
@@ -49,7 +51,7 @@ int main(int argc, char **argv)
    int mx = MAXX, my = MAXY, mx_2, my_2;
 
    opterr = 0;
-   while ((c = getopt(argc, argv, "hsW:H:")) != -1)
+   while ((c = getopt(argc, argv, "f:hsW:H:")) != -1)
       switch (c)
       {
          case 'H':
@@ -58,6 +60,10 @@ int main(int argc, char **argv)
 
          case 'W':
             mx = atoi(optarg);
+            break;
+
+         case 'f':
+            fname = optarg;
             break;
 
          case 'h':
@@ -177,7 +183,7 @@ int main(int argc, char **argv)
       }
    }
 
-   if ((f = fopen("wc.png", "w")) == NULL)
+   if ((f = fopen(fname, "w")) == NULL)
       perror("fopen"), exit(EXIT_FAILURE);
 
    gdImagePng(img, f);

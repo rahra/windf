@@ -100,9 +100,10 @@ int main(int argc, char *argv[])
    if (im == NULL)
    {
       //im = gdImageCreate(width << 1, height << 1);
-      im = gdImageCreate(iwidth, iheight);
+      im = gdImageCreateTrueColor(iwidth, iheight);
       bc = gdImageColorAllocate(im, 255, 255, 255);
       gdImageColorTransparent(im, bc);
+      gdImageFilledRectangle(im, 0, 0, iwidth, iheight, bc);
    }
 
    for (; argv[optind]; optind++)

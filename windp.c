@@ -18,6 +18,11 @@
 #define MAXY 128
 
 #define SANGLE (5.0 * M_PI / 180.0)
+#define WINDHI 1000.0
+#define WINDLO -1000.0
+
+#define DESC -1
+#define ASC 1
 
 
 void usage(const char *s)
@@ -26,8 +31,11 @@ void usage(const char *s)
          "usage: %s [OPTIONS]\n"
          "   -f <file> ..... Image file name.\n"
          "   -h ............ This help.\n"
-         "   -s ............ Print out statistics.\n"
          "   -H <width> .... Width of image (default = %d)\n"
+         "   -n ............ Do not create image.\n"
+         "   -p ............ Sort stats ascending by percentage.\n"
+         "   -P ............ Sort stats descending by percentage.\n"
+         "   -s ............ Print out statistics.\n"
          "   -W <height> ... Height of image (default = %d)\n",
          s, MAXX, MAXY);
 }
@@ -35,7 +43,7 @@ void usage(const char *s)
 
 int main(int argc, char **argv)
 {
-   int i, j, lineno = 0, ws[NUMDIV][MAXMS];
+   int i, j, k, lineno = 0, ws[NUMDIV][MAXMS];
    char buf[256], *s;
    double speed, dir, z;
    int si, di, vd = 0;
@@ -49,9 +57,12 @@ int main(int argc, char **argv)
 
    int c, stats = 0;
    int mx = MAXX, my = MAXY, mx_2, my_2;
+   int mimg = 1, sort = 0;
+
+   double percnt[NUMDIV + 1];
 
    opterr = 0;
-   while ((c = getopt(argc, argv, "f:hsW:H:")) != -1)
+   while ((c = getopt(argc, argv, "f:hnpPsW:H:")) != -1)
       switch (c)
       {
          case 'H':
@@ -69,6 +80,18 @@ int main(int argc, char **argv)
          case 'h':
             usage(argv[0]);
             exit(EXIT_FAILURE);
+
+         case 'n':
+            mimg = 0;
+            break;
+
+         case 'p':
+            sort = ASC;
+            break;
+
+         case 'P':
+            sort = DESC;
+            break;
 
          case 's':
             stats = 1;
@@ -125,7 +148,7 @@ int main(int argc, char **argv)
       ws[di][si]++;
    }
 
-   for (i = 0, z = 0.0, maxp = 0.0; i < NUMDIV; i ++)
+   for (i = 0, z = 0.0, maxp = 0.0; i < NUMDIV; i++)
    {
       z += ws[i][0];
       for (j = 1, speed = 0.0; j < MAXMS; j++)
@@ -135,13 +158,61 @@ int main(int argc, char **argv)
       if (maxp < speed)
          maxp = speed;
 
-      if (stats)
+      percnt[i] = speed;
+/*      if (stats && !sort)
          printf("%d°: %.2f%%\n", i * 360 / NUMDIV, speed * 100.0);
-   }
-   //maxp += z / vd;
+*/   }
+   percnt[NUMDIV] = z / vd;
+   z /= 2.0;
+   maxp += z / vd;
 
-   if (stats)
-      printf("silent: %.2f%%\nmaxp = %.2f%%\n", z / vd * 100.0, maxp * 100.0);
+/*   if (stats && !sort)
+      //printf("silent: %.2f%%\nmaxp = %.2f%%\n", z / vd * 100.0 * 2.0, maxp * 100.0);
+      printf("silent: %.2f%%\n", z / vd * 100.0 * 2.0);
+*/
+   if (sort == DESC)
+   {
+   for (j = 0; j <= NUMDIV; j++)
+   {
+      for (i = 0, k = 0, speed = WINDLO; i <= NUMDIV; i++)
+      {
+         if (percnt[i] >= WINDHI)
+            continue;
+         if (percnt[i] >= speed)
+            k = i, speed = percnt[i];
+      }
+      if (k == NUMDIV)
+         printf("silent: %.2f%%\n", speed * 100.0);
+      else
+         printf("%d°: %.2f%%\n", k * 360 / NUMDIV, speed * 100.0);
+      percnt[k] = WINDHI;
+   }
+   }
+   else if (sort == ASC)
+   {
+   for (j = 0; j <= NUMDIV; j++)
+   {
+      for (i = 0, k = 0, speed = WINDHI; i <= NUMDIV; i++)
+      {
+         if (percnt[i] <= WINDLO)
+            continue;
+         if (percnt[i] <= speed)
+            k = i, speed = percnt[i];
+      }
+      if (k == NUMDIV)
+         printf("silent: %.2f%%\n", speed * 100.0);
+      else
+         printf("%d°: %.2f%%\n", k * 360 / NUMDIV, speed * 100.0);
+      percnt[k] = WINDLO;
+   }
+   }
+   else
+   {
+      printf("silent: %.2f%%\n", percnt[NUMDIV] * 100.0);
+      for (j = 0; j < NUMDIV; j++)
+         printf("%d°: %.2f%%\n", j * 360 / NUMDIV, percnt[j] * 100.0);
+   }
+
 
    img = gdImageCreateTrueColor(mx, my);
    bg = gdImageColorAllocate(img, 255, 255, 255);
@@ -151,14 +222,14 @@ int main(int argc, char **argv)
    gdImageSetAntiAliased(img, fg[1]);
    fg[0] = gdAntiAliased;
 
-   //ls = (double) z / (double) vd;
-   ls = SILENT_PERCENT;
+   ls = (double) z / (double) vd;
+   //ls = SILENT_PERCENT;
 
    gdImageArc(img, mx_2, my_2, 2 * ls * mx_2 / maxp, 2 * ls * my_2 / maxp, 0, 360, fg[0]);
    for (i = 0; i < NUMDIV; i++)
    {
       dir = i * 2.0 * M_PI / NUMDIV - M_PI_2;
-      for (j = 1, ls = SILENT_PERCENT /*ls = (double) z / (double) vd*/, col = 0; j < MAXMS; j += 2, ls += speed, col ^= 1)
+      for (j = 1, /*ls = SILENT_PERCENT*/ ls = (double) z / (double) vd, col = 0; j < MAXMS; j += 2, ls += speed, col ^= 1)
       {
          speed = (double) (ws[i][j] + ws[i][j + 1]) / (double) vd;
 
@@ -183,12 +254,14 @@ int main(int argc, char **argv)
       }
    }
 
-   if ((f = fopen(fname, "w")) == NULL)
-      perror("fopen"), exit(EXIT_FAILURE);
+   if (mimg)
+   {
+      if ((f = fopen(fname, "w")) == NULL)
+         perror("fopen"), exit(EXIT_FAILURE);
 
-   gdImagePng(img, f);
-
-   fclose(f);
+      gdImagePng(img, f);
+      fclose(f);
+   }
 
    gdImageDestroy(img);
 

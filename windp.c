@@ -170,6 +170,8 @@ int main(int argc, char **argv)
       //printf("silent: %.2f%%\nmaxp = %.2f%%\n", z / vd * 100.0 * 2.0, maxp * 100.0);
       printf("silent: %.2f%%\n", z / vd * 100.0 * 2.0);
 */
+   if (stats)
+   {
    if (sort == DESC)
    {
    for (j = 0; j <= NUMDIV; j++)
@@ -212,7 +214,7 @@ int main(int argc, char **argv)
       for (j = 0; j < NUMDIV; j++)
          printf("%d°: %.2f%%\n", j * 360 / NUMDIV, percnt[j] * 100.0);
    }
-
+   }
 
    img = gdImageCreateTrueColor(mx, my);
    bg = gdImageColorAllocate(img, 255, 255, 255);

@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
    int dc, bc;
 
    int c, i, arrdef[MAXAD];
-   int width = DEF_W, height = DEF_H, iwidth = DEF_W, iheight = DEF_H;
+   int width = 0, height = 0, iwidth = 0, iheight = 0;
    char *file = NULL, *s;
 
    if (argc < 2)
@@ -83,6 +83,11 @@ int main(int argc, char *argv[])
 
    //if (!width) width = DEF_W;
    //if (!height) height = DEF_H;
+
+   if (!iwidth) iwidth = DEF_W;
+   if (!iheight) iheight = DEF_H;
+   if (!width) width = iwidth;
+   if (!height) height = iheight;
 
    if (file == NULL)
       out = stdout;

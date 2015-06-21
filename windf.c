@@ -7,7 +7,7 @@
 
 
 #define MAX_WSYM 6
-#define LTHICK(x,y) ((x + y) >> 6)
+#define LTHICK(x,y) ((x + y) >> 7)
 #define SDIV sqrt(5.0*5.0 + 2.0*2.0)
 
 
@@ -61,6 +61,41 @@ void windf_col(int dc)
 }
 
 
+static void cloudiness(gdImage *im, int cx, int cy, int sx, int sy, int dc, int cloudy)
+{
+   double cl = (double) cloudy / 8;
+   int white;
+
+   switch (cloudy)
+   {
+      case 0:
+         return;
+
+      case 1:
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), -90-15, -90+15, dc, gdArc);
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), 90-15, 90+15, dc, gdArc);
+         gdImageFilledRectangle(im,
+               cx - 0.5 * sx * cos(-105*M_PI/180), cy - 0.5 * sy * sin(-105*M_PI/180),
+               cx + 0.5 * sx * cos(-105*M_PI/180), cy + 0.5 * sy * sin(-105*M_PI/180),
+               dc);
+         break;
+
+      case 7:
+         white = gdImageColorAllocate(im, 255, 255, 255);
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), 0, 360, dc, gdPie);
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), -90-15, -90+15, dc, white);
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), 90-15, 90+15, dc, white);
+         gdImageFilledRectangle(im,
+               cx - 0.5 * sx * cos(-105*M_PI/180), cy - 0.5 * sy * sin(-105*M_PI/180),
+               cx + 0.5 * sx * cos(-105*M_PI/180), cy + 0.5 * sy * sin(-105*M_PI/180),
+               white);
+         break;
+
+      default:
+         gdImageFilledArc(im, cx, cy, round(sx), round(sy), -90, round(cl * 360)-90, dc, gdPie);
+   }
+}
+
 /*! @param im pointer to gdImage
  *  @param cx x position of center of symbol (= center of station circle)
  *  @param cy y position of center of symbol
@@ -68,9 +103,10 @@ void windf_col(int dc)
  *  @param my height of symbol
  *  @param wd wind direction (0-360°)
  *  @param ws wind speed on knots.
- *  @param c line color.
+ *  @param dc line color.
+ *  @param cloudy Cloudiness given in eighth.
  */
-void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws, int dc)
+void windf_drawc0(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws, int dc, int cloudy)
 {
    double sx, sy, lx, ly;
    int i, j;
@@ -88,6 +124,7 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
    {
       if (sc_)
       {
+         cloudiness(im, cx, cy, round(sx), round(sy), dc, cloudy);
          gdImageArc(im, cx, cy, round(sx), round(sy), 0, 360, dc);
          gdImageArc(im, cx, cy, round(sx * 0.66), round(sy * 0.66), 0, 360, dc);
       }
@@ -101,6 +138,7 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
 
    if (sc_)
    {
+      cloudiness(im, cx, cy, round(sx), round(sy), dc, cloudy);
       gdImageLine(im, round(cx + 2 * lx), round(cy + 2 * ly), round(10 * lx + cx), round(10 * ly + cy), dc);
       gdImageArc(im, cx, cy, round(sx), round(sy), 0, 360, dc);
    }
@@ -149,6 +187,12 @@ void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double 
             continue;
       }
    }
+}
+
+
+void windf_drawc(gdImage *im, int cx, int cy, int mx, int my, double wd, double ws, int dc)
+{
+   windf_drawc0(im, cx, cy, mx, my, wd, ws, dc_, 0);
 }
 
 

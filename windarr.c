@@ -25,16 +25,17 @@ void usage(const char *a0)
       "   -W <width> ......... Image width.\n"
       "   -H <height> ........ Image height.\n"
       "\n"
-      "   <wind_def> = <ws:wdir[:x:y[:w[:h]]][:#col]>\n"
+      "   <wind_def> = <ws:wdir[:c[:x:y[:w[:h]]]][:#col]>\n"
       "      ws .............. Wind speed in knots.\n"
       "      wdir ............ Wind direction in degrees.\n"
+      "      c ............... Cloudiness in eighth (0 - 8).\n"
       "      x, y ............ Coordinates of center point of wind arrow.\n"
       "      w, h ............ Width and height of wind arrow.\n"
       "      col ............. Color given as hexadecimal number 3 times 8 bit (HTML color).\n",
       a0);
 }
 
-enum {WS, WDIR, X, Y, W, H, C, MAXAD};
+enum {WS, WDIR, CL, X, Y, W, H, C, MAXAD};
 
 
 int main(int argc, char *argv[])
@@ -129,6 +130,11 @@ int main(int argc, char *argv[])
       if (i < 2)
          fprintf(stderr, "ill wind_def\n"), exit(1);
 
+      if (arrdef[CL] > 8)
+         arrdef[CL] = 8;
+      if (arrdef[CL] < 0)
+         arrdef[CL] = 0;
+
       if (arrdef[X] == -1)
          arrdef[X] = im->sx >> 1;
       if (arrdef[Y] == -1)
@@ -154,7 +160,7 @@ int main(int argc, char *argv[])
       dc = gdImageColorAllocate(im, (arrdef[C] >> 16) & 0xff, (arrdef[C] >> 8) & 0xff, arrdef[C] & 0xff);
       gdImageSetAntiAliased(im, dc);
       windf_col(gdAntiAliased);
-      windf_draw(im, arrdef[X], arrdef[Y], arrdef[W], arrdef[H], arrdef[WDIR], arrdef[WS]);
+      windf_drawc0(im, arrdef[X], arrdef[Y], arrdef[W], arrdef[H], arrdef[WDIR], arrdef[WS], dc, arrdef[CL]);
    }
 
    if (file == NULL)
